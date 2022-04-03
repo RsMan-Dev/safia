@@ -1,11 +1,13 @@
-import { Client, GuildMember, Intents, Interaction, Message } from "discord.js"
-import Logger from "./utils/logger"
+import { Client, Guild, GuildMember, Intents, Interaction } from "discord.js";
+import Logger from "./utils/logger";
 import dotenv from "dotenv";
 import Environment from "./environment/environment";
 import CommandManager from "./managers/command_manager";
 import ButtonManger from "./managers/button_manager";
-import MemberAddManager from "./managers/member_add_manager";
+import MemberManager from "./managers/member_manager";
 import SelectmenuManager from "./managers/select_menu_manager";
+import { PrismaClient } from "@prisma/client";
+import GuildManager from "./managers/guild_manager";
 
 dotenv.config();
 
@@ -17,7 +19,6 @@ export let client = new Client({intents: [
     FLAGS.DIRECT_MESSAGES
 ]});
 
-
 client.on("interactionCreate", (interaction : Interaction) => {
     if(interaction.isCommand()) CommandManager.dispatch(interaction);
     if(interaction.isButton()) ButtonManger.dispatch(interaction);
@@ -26,11 +27,14 @@ client.on("interactionCreate", (interaction : Interaction) => {
 
 client.on("ready", () => {
     Logger.info("Bot démarré");
+    Logger.info("Mon lien d'invitation est : https://discord.com/api/oauth2/authorize?client_id=959554157503733821&permissions=8&scope=bot%20applications.commands")
 });
 
-client.on("guildMemberAdd", (member : GuildMember ) => {
-    MemberAddManager.dispatch(member);
-});
+client.on("guildMemberAdd", MemberManager.onAdd);
+client.on("guildMemberDelete", MemberManager.onDelete);
+
+client.on("guildCreate", GuildManager.onCreate);
+client.on("guildDelete", GuildManager.onDelete);
 
 client.login(Environment.get.bot_token);
 

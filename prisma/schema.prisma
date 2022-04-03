@@ -1,0 +1,130 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model anti_link_channels {
+  id               String         @id @db.VarChar(32)
+  configuration_id BigInt
+  configuration    configurations @relation(fields: [configuration_id], references: [id], onUpdate: Restrict, map: "anti_link_channels_ibfk_1")
+
+  @@index([configuration_id], map: "configuration_id")
+}
+
+model guild_user {
+  guild_id String @db.VarChar(32)
+  user_id  String @db.VarChar(32)
+  level    BigInt @default(0)
+  xp       String @default("0") @db.VarChar(50)
+  guild    guilds @relation(fields: [guild_id], references: [id], onUpdate: Restrict, map: "guild_user_ibfk_1")
+  user     users  @relation(fields: [user_id], references: [id], onUpdate: Restrict, map: "guild_user_ibfk_2")
+
+  @@id([guild_id, user_id])
+  @@index([user_id], map: "user_id")
+}
+
+model guilds {
+  id                      String         @id @db.VarChar(32)
+  name                    String?        @db.VarChar(32)
+  executed_command_number BigInt         @default(0)
+  sent_message_number     BigInt         @default(0)
+  join_number             BigInt         @default(0)
+  configuration_id        BigInt         @unique(map: "configuration_id")
+  configuration           configurations @relation(fields: [configuration_id], references: [id], onUpdate: Restrict, map: "guilds_ibfk_1")
+  guild_user              guild_user[]
+  roles                   roles[]
+}
+
+model level_roles {
+  id               BigInt         @id @default(autoincrement())
+  level            BigInt
+  role_id          String         @db.VarChar(32)
+  configuration_id BigInt
+  configuration    configurations @relation(fields: [configuration_id], references: [id], onUpdate: Restrict, map: "level_roles_ibfk_1")
+
+  @@index([configuration_id], map: "configuration_id")
+}
+
+model media_channels {
+  id               BigInt @id @default(autoincrement())
+  url              String @db.VarChar(192)
+  channel_id       String @db.VarChar(32)
+  message          String @db.Text
+  configuration_id BigInt
+  configuration    configurations @relation(fields: [configuration_id], references: [id], onUpdate: Restrict, map: "media_channels_ibfk_1")
+
+  @@index([configuration_id], map: "configuration_id")
+}
+
+model role_permission {
+  role_id       String      @db.VarChar(32)
+  permission_id BigInt
+  permission    permissions @relation(fields: [permission_id], references: [id], onUpdate: Restrict, map: "role_permission_ibfk_2")
+  role          roles       @relation(fields: [role_id], references: [id], onUpdate: Restrict, map: "role_permission_ibfk_1")
+
+  @@id([role_id, permission_id])
+  @@index([permission_id], map: "permission_id")
+}
+
+model roles {
+  id              String            @id @db.VarChar(32)
+  name            String?           @db.VarChar(128)
+  guild_id        String            @db.VarChar(32)
+  guild           guilds            @relation(fields: [guild_id], references: [id], onUpdate: Restrict, map: "roles_ibfk_1")
+  role_permission role_permission[]
+
+  @@index([guild_id], map: "guild_id")
+}
+
+model rules {
+  id               BigInt         @id @default(autoincrement())
+  title            String?        @db.VarChar(192)
+  content          String         @db.VarChar(192)
+  place            Int
+  configuration_id BigInt
+  configuration    configurations @relation(fields: [configuration_id], references: [id], onUpdate: Restrict, map: "rules_ibfk_1")
+
+  @@index([configuration_id], map: "configuration_id")
+}
+
+model users {
+  id         String       @id @db.VarChar(32)
+  guild_user guild_user[]
+}
+
+model configurations {
+  id                               BigInt               @id @default(autoincrement())
+  welcome_title                    String               @default("A new member !") @db.VarChar(192)
+  welcome_message                  String               @db.Text
+  welcome_color                    String               @default("00FF00") @db.VarChar(6)
+  welcome_channel_id               String?              @db.VarChar(32)
+  goodbye_title                    String               @default("A new member !") @db.VarChar(192)
+  goodbye_message                  String               @db.Text
+  goodbye_color                    String               @default("FF0000") @db.VarChar(6)
+  goodbye_channel_id               String?              @db.VarChar(32)
+  boost_title                      String               @default("A new member !") @db.VarChar(192)
+  boost_message                    String               @db.Text
+  boost_color                      String               @default("A13DFF") @db.VarChar(6)
+  boost_channel_id                 String?              @db.VarChar(32)
+  rules_title                      String?              @db.VarChar(192)
+  rules_channel_id                 String?              @db.VarChar(32)
+  rules_admit_role_id              String?              @db.VarChar(32)
+  log_channel_id                   String?              @db.VarChar(32)
+  do_level_role_replaces_old_roles Boolean              @default(dbgenerated("b'0'")) @db.Bit(1)
+  anti_link_channels               anti_link_channels[]
+  guild                            guilds?
+  level_roles                      level_roles[]
+  rules                            rules[]
+  media_channels                   media_channels[]
+}
+
+model permissions {
+  id              BigInt            @id @default(autoincrement())
+  name            String?           @unique(map: "name") @db.VarChar(192)
+  label           String?           @db.VarChar(192)
+  role_permission role_permission[]
+}

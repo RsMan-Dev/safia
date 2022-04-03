@@ -34,10 +34,10 @@ export default class Logger{
     static log(message: string, level = LogLevels.debug) : void {
         if(Logger.isLoggable(level)) console.log(`${Logger.getLogColor(level)}[${Logger.blueColor}BOT${Logger.getLogColor(level)}] ` + message)
     }
-    static dump(obj: any, level = LogLevels.debug) : void {
-        if(Logger.isLoggable(level)) console.log(
-            `${Logger.getLogColor(level)}[${Logger.blueColor}BOT${Logger.getLogColor(level)}] - DUMPING OBJECT => ${Logger.whiteColor}`,
-            obj
+    static dump(...obj: any) : void {
+        if(Logger.isLoggable(LogLevels.debug)) console.log(
+            `${Logger.getLogColor(LogLevels.debug)}[${Logger.blueColor}BOT${Logger.getLogColor(LogLevels.debug)}] - DUMPING OBJECT => ${Logger.whiteColor}`,
+            ...obj
         )
     }
 }

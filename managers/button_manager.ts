@@ -8,6 +8,7 @@ export default class ButtonManger{
         switch(interaction.customId){
             case "ping": Ping.trigger(interaction); return;
             case "sayWelcome": Welcome.sayWelcome(interaction); return;
+            case "sayGoodbye": Welcome.sayGoodbye(interaction); return;
         }
     }
 }
