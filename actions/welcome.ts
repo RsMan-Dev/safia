@@ -1,4 +1,5 @@
-import { ButtonInteraction, GuildMember, MessageActionRow, MessageButton, MessageEmbed, TextChannel, Message } from "discord.js";
+import { ButtonInteraction, GuildMember, MessageActionRow, MessageButton, MessageEmbed, TextChannel, Message, PartialGuildMember } from "discord.js";
+import Logger from "../utils/logger";
 import prisma_instance from "../utils/prisma_instance";
 
 export default class Welcome {
@@ -12,7 +13,7 @@ export default class Welcome {
                 embeds:[
                     new MessageEmbed()
                         .setTitle(conf.welcome_title)
-                        .setDescription(conf.welcome_message.replace("{user}", member.toString()).replace("{user_number}", member.guild.memberCount.toString()).replace("{user_list}", ""))
+                        .setDescription(conf.welcome_message.replaceAll("{user}", member.toString()).replaceAll("{user_number}", member.guild.memberCount.toString()).replaceAll("{user_list}", ""))
                         .setImage(member.avatarURL() || "")
                         .setColor(`#${conf.welcome_color}`)
                 ],
@@ -34,13 +35,12 @@ export default class Welcome {
         if(!interaction.guild || !interaction.member) return;
         let message = interaction.message as Message;
         if(!message.embeds[0].description?.includes(interaction.member.toString() || "#")){
-            message.embeds[0].setDescription(message.embeds[0].description + "\n" + interaction.member);
-            message.edit({
+            message.embeds[0].setDescription(message.embeds[0].description + `\n - ${interaction.member.toString()}`);
+            interaction.update({
                 embeds: [
                     message.embeds[0]
                 ]
             });
-            interaction.reply({content: `You said welcome.` , ephemeral: true});
             return;
         }
         interaction.reply({content: `You have already said welcome` , ephemeral: true});
@@ -50,16 +50,15 @@ export default class Welcome {
 
 
 
-  static async sendGoodbyeMessage(member: GuildMember) {
+  static async sendGoodbyeMessage(member: GuildMember | PartialGuildMember) {
     let conf = await prisma_instance.configurations.findFirst({where: { guild: { id: member.guild.id } } });
-
     if(conf?.goodbye_channel_id){
         (member.guild.channels.cache.get(conf.goodbye_channel_id) as TextChannel)
             ?.send({
                 embeds:[
                     new MessageEmbed()
                         .setTitle(conf.goodbye_title)
-                        .setDescription(conf.goodbye_message.replace("{user}", member.toString()).replace("{user_number}", member.guild.memberCount.toString()).replace("{user_list}", ""))
+                        .setDescription(conf.goodbye_message.replaceAll("{user}", member.toString()).replaceAll("{user_number}", member.guild.memberCount.toString()).replaceAll("{user_list}", ""))
                         .setImage(member.avatarURL() || "")
                         .setColor(`#${conf.goodbye_color}`)
                 ],
@@ -73,7 +72,6 @@ export default class Welcome {
                         ]
                     })
                 ]
-                
             });
     }
     
@@ -83,13 +81,12 @@ static async sayGoodbye(interaction: ButtonInteraction) {
     if(!interaction.guild || !interaction.member) return;
     let message = interaction.message as Message;
     if(!message.embeds[0].description?.includes(interaction.member.toString() || "#")){
-        message.embeds[0].setDescription(message.embeds[0].description + "\n" + interaction.member);
-        message.edit({
+        message.embeds[0].setDescription(message.embeds[0].description + `\n - ${interaction.member.toString()}`);
+        interaction.update({
             embeds: [
                 message.embeds[0]
             ]
         });
-        interaction.reply({content: `You said goodbye.` , ephemeral: true});
         return;
     }
     interaction.reply({content: `You have already said goodbye.` , ephemeral: true});

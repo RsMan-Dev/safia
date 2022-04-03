@@ -16,7 +16,8 @@ let {FLAGS} = Intents;
 export let client = new Client({intents: [
     FLAGS.GUILDS,
     FLAGS.GUILD_MEMBERS,
-    FLAGS.DIRECT_MESSAGES
+    FLAGS.DIRECT_MESSAGES,
+    FLAGS.GUILD_MESSAGES
 ]});
 
 client.on("interactionCreate", (interaction : Interaction) => {
@@ -31,7 +32,7 @@ client.on("ready", () => {
 });
 
 client.on("guildMemberAdd", MemberManager.onAdd);
-client.on("guildMemberDelete", MemberManager.onDelete);
+client.on("guildMemberRemove", MemberManager.onDelete);
 
 client.on("guildCreate", GuildManager.onCreate);
 client.on("guildDelete", GuildManager.onDelete);

@@ -8,6 +8,7 @@ import Environment from "../environment/environment";
 import Sanction from "../actions/sanction";
 import AutoRole from "../actions/autorole";
 import Moderation from "../actions/moderation";
+import Configuration from "../actions/configuration";
 
 export default class CommandManager{
     private constructor(){}
@@ -20,6 +21,9 @@ export default class CommandManager{
             case "softban": Sanction.softban(interaction); return;
             case "deployrole": AutoRole.send(interaction); return;
             case "clear": Moderation.clear(interaction); return;
+            case "mute": Sanction.mute(interaction); return;
+            case "config": Configuration.init(interaction); return;
+            default: interaction.reply({content: "wip", ephemeral: true}); return;
         }
     }
 
@@ -47,10 +51,17 @@ export default class CommandManager{
             .addUserOption(option => option.setName("user").setDescription("The user to softban!").setRequired(true))
             .addStringOption(option => option.setName("reason").setDescription("The reason of the softban!").setRequired(true)),
 
+            new SlashCommandBuilder().setName("clear").setDescription("Clear command who clear the amount of message selected!")
+            .addIntegerOption(option => option.setName("amount").setDescription("The amount of message to clear!").setRequired(true)),
+
+            new SlashCommandBuilder().setName("mute").setDescription("Mute command who mute the user selected!")
+            .addUserOption(option => option.setName("user").setDescription("The user to mute!").setRequired(true))
+            .addStringOption(option => option.setName("time").setDescription("Time in format: [days]d [hours]h [minutes]m [seconds]s, or [seconds]").setRequired(true))
+            .addStringOption(option => option.setName("reason").setDescription("The reason of the mute!").setRequired(true)),
+
             new SlashCommandBuilder().setName("deployrole").setDescription("Deploy autorole select menu!"),
 
-            new SlashCommandBuilder().setName("clear").setDescription("Clear command who clear the amount of message selected!").addIntegerOption(option => option.setName("amount").setDescription("The amount of message to clear!").setRequired(true)),
-
+            new SlashCommandBuilder().setName("config").setDescription("Display configuration menu"),
         ].map((command) => command.toJSON());
 
         if (
