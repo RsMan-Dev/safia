@@ -1,0 +1,35 @@
+{
+  "scripts": {
+    "dev": "nodemon index.ts",
+    "start": "ts-node index.ts",
+    "deploy-commands": "ts-node deploy-commands.ts"
+  },
+  "dependencies": {
+    "@discordjs/rest": "^0.3.0",
+    "axios": "^0.26.1",
+    "discord.js": "^13.6.0",
+    "dotenv": "^16.0.0",
+    "typescript": "^4.6.3",
+    "yaml": "^1.10.2"
+  },
+  "name": "safia",
+  "version": "0.0.1",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RsMan-Dev/safia.git"
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "moderation",
+    "v13"
+  ],
+  "author": "RsMan simn24",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/RsMan-Dev/safia/issues"
+  },
+  "homepage": "https://github.com/RsMan-Dev/safia#readme",
+  "description": ""
+}
