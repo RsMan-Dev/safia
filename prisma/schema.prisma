@@ -102,11 +102,11 @@ model configurations {
   welcome_message                  String               @db.Text
   welcome_color                    String               @default("00FF00") @db.VarChar(6)
   welcome_channel_id               String?              @db.VarChar(32)
-  goodbye_title                    String               @default("A new member !") @db.VarChar(192)
+  goodbye_title                    String               @default("A member left !") @db.VarChar(192)
   goodbye_message                  String               @db.Text
   goodbye_color                    String               @default("FF0000") @db.VarChar(6)
   goodbye_channel_id               String?              @db.VarChar(32)
-  boost_title                      String               @default("A new member !") @db.VarChar(192)
+  boost_title                      String               @default("A member boost the server !") @db.VarChar(192)
   boost_message                    String               @db.Text
   boost_color                      String               @default("A13DFF") @db.VarChar(6)
   boost_channel_id                 String?              @db.VarChar(32)

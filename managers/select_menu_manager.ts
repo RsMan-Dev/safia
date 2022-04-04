@@ -10,6 +10,7 @@ export default class SelectmenuManager{
             case "selectRole": AutoRole.menuRole(interaction); return;
             case ConfigurationSelects.main_config_select: Configuration.setPageFromMainMenu(interaction); return;
             case ConfigurationSelects.welcome_message_id_config_select: Configuration.setWelcomeMessagesChannelId(interaction); return;
+            case ConfigurationSelects.goodbye_message_id_config_select: Configuration.setGoodbyeMessagesChannelId(interaction); return;
             default: interaction.reply({content: "wip", ephemeral: true}); return;
         }
     }

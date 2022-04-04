@@ -19,11 +19,15 @@ export enum ConfigurationSelectMenuMain{
 export enum ConfigurationSelects{
     main_config_select = "main_config_select",
     welcome_message_id_config_select = "welcome_message_id_config_select",
+    goodbye_message_id_config_select = "goodbye_message_id_config_select",
 }
 export enum ConfigurationButtons{
     welcome_message_title_config_button = "welcome_message_title_config_button",
     welcome_message_text_config_button = "welcome_message_text_config_button",
     welcome_message_color_config_button = "welcome_message_color_config_button",
+    goodbye_message_title_config_button = "goodbye_message_title_config_button",
+    goodbye_message_text_config_button = "goodbye_message_text_config_button",
+    goodbye_message_color_config_button = "goodbye_message_color_config_button",
 }
 
 export default class ConfigurationPage{
@@ -90,6 +94,51 @@ export default class ConfigurationPage{
                         .setLabel("Configure description")
                         .setStyle("SECONDARY"),
                     new MessageButton().setCustomId(ConfigurationButtons.welcome_message_color_config_button)
+                        .setLabel("Configure color")
+                        .setStyle("SUCCESS")    
+
+                ])
+            ]
+        } as MessageOptions
+    }
+
+
+    static async goodbye_message(interaction: SelectMenuInteraction | ButtonInteraction): Promise<MessageOptions> {
+        let channels = interaction.guild?.channels.cache.filter(c=>c.isText()).map(c=>({label: c.name.substring(0,50), value: c.id}))!;
+        let conf = await prisma_instance.configurations.findFirst({where: { guild: { id: interaction.guild!.id } } });
+        let options = [];
+        for (let i = 0; i < channels.length; i += 24) {
+            options.push(
+                new MessageActionRow().addComponents(
+                    [
+                        new MessageSelectMenu().setCustomId(ConfigurationSelects.goodbye_message_id_config_select + "#"+(i/24)).setPlaceholder("Choose in what channel welcome will be sent...")
+                            .addOptions([
+                                {label: "None", description: "Use this to disable feature", value: "none"},
+                                ...channels.slice(i, i + 24)
+                            ]),
+                    ]
+                ),
+            );
+        }
+        return {
+            content: "**Goodbye configuration.**\nYou can configure goodbye message in this section\n__Warning! multiple channel selects can appear, use only one of these selects__\n\nEmbed preview:",
+            embeds:[
+                new MessageEmbed()
+                .setTitle(conf!.goodbye_title)
+                .setDescription(conf!.goodbye_message.replaceAll("{user}", interaction.member!.toString()).replaceAll("{user_number}", interaction.guild!.memberCount.toString()).replaceAll("{user_list}", `\n - ${interaction.member!}`))
+                .setImage((interaction.member! as GuildMember).avatarURL() || "")
+                .setColor(`#${conf!.goodbye_color}`)
+            ],
+            components: [
+                ...options,
+                new MessageActionRow().addComponents([
+                    new MessageButton().setCustomId(ConfigurationButtons.goodbye_message_title_config_button)
+                        .setLabel("Configure title")
+                        .setStyle("PRIMARY"),
+                    new MessageButton().setCustomId(ConfigurationButtons.goodbye_message_text_config_button)
+                        .setLabel("Configure description")
+                        .setStyle("SECONDARY"),
+                    new MessageButton().setCustomId(ConfigurationButtons.goodbye_message_color_config_button)
                         .setLabel("Configure color")
                         .setStyle("SUCCESS")    
 

@@ -15,7 +15,13 @@ export default class ButtonManger{
             case ConfigurationButtons.welcome_message_text_config_button:
             case ConfigurationButtons.welcome_message_title_config_button:
                 Configuration.setWelcomeMessageTextData(interaction); return;
+            case ConfigurationButtons.goodbye_message_color_config_button:
+            case ConfigurationButtons.goodbye_message_text_config_button:
+            case ConfigurationButtons.goodbye_message_title_config_button:
+                Configuration.setGoodbyeMessageTextData(interaction); return;
+
             default: interaction.reply({content: "wip", ephemeral: true}); return;
+            
         }
     }
 }
