@@ -136,4 +136,7 @@ export default class Configuration{
         interaction.reply({content: "Now give me content in this channel simply by sending message.\nYou have 20minutes.\n\n"+example, ephemeral: true});
     }
 
+
+    
+
 }

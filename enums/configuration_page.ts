@@ -28,6 +28,7 @@ export enum ConfigurationButtons{
     goodbye_message_title_config_button = "goodbye_message_title_config_button",
     goodbye_message_text_config_button = "goodbye_message_text_config_button",
     goodbye_message_color_config_button = "goodbye_message_color_config_button",
+    return_to_main_menu_config_button = "return_to_main_menu_config_button",
 }
 
 export default class ConfigurationPage{
@@ -35,6 +36,7 @@ export default class ConfigurationPage{
     static get main(): MessageOptions {
         return {
             content: "**Beginning of configuration!**\nChoose what you want to configure on this select menu:",
+            embeds: [],
             components: [
                 new MessageActionRow({
                     components: [
@@ -92,10 +94,13 @@ export default class ConfigurationPage{
                         .setStyle("PRIMARY"),
                     new MessageButton().setCustomId(ConfigurationButtons.welcome_message_text_config_button)
                         .setLabel("Configure description")
-                        .setStyle("SECONDARY"),
+                        .setStyle("PRIMARY"),
                     new MessageButton().setCustomId(ConfigurationButtons.welcome_message_color_config_button)
                         .setLabel("Configure color")
-                        .setStyle("SUCCESS")    
+                        .setStyle("PRIMARY"),
+                    new MessageButton().setCustomId(ConfigurationButtons.return_to_main_menu_config_button)
+                        .setLabel("Return to main menu")
+                        .setStyle("DANGER")   
 
                 ])
             ]
@@ -137,10 +142,14 @@ export default class ConfigurationPage{
                         .setStyle("PRIMARY"),
                     new MessageButton().setCustomId(ConfigurationButtons.goodbye_message_text_config_button)
                         .setLabel("Configure description")
-                        .setStyle("SECONDARY"),
+                        .setStyle("PRIMARY"),
                     new MessageButton().setCustomId(ConfigurationButtons.goodbye_message_color_config_button)
                         .setLabel("Configure color")
-                        .setStyle("SUCCESS")    
+                        .setStyle("PRIMARY"),
+                    new MessageButton().setCustomId(ConfigurationButtons.return_to_main_menu_config_button)
+                        .setLabel("Return to main menu")
+                        .setStyle("DANGER")   
+
 
                 ])
             ]

@@ -2,7 +2,7 @@ import { ButtonInteraction } from "discord.js";
 import Configuration from "../actions/configuration";
 import Ping from "../actions/ping";
 import Welcome from "../actions/welcome";
-import { ConfigurationButtons } from "../enums/configuration_page";
+import ConfigurationPage, { ConfigurationButtons } from "../enums/configuration_page";
 
 export default class ButtonManger{
     private constructor(){}
@@ -19,6 +19,9 @@ export default class ButtonManger{
             case ConfigurationButtons.goodbye_message_text_config_button:
             case ConfigurationButtons.goodbye_message_title_config_button:
                 Configuration.setGoodbyeMessageTextData(interaction); return;
+            case ConfigurationButtons.return_to_main_menu_config_button: 
+                interaction.update( ConfigurationPage.main); return;
+
 
             default: interaction.reply({content: "wip", ephemeral: true}); return;
             
