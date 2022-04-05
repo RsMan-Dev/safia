@@ -14,7 +14,7 @@ export default class GuildManager{
                 data: {
                     welcome_message: "Welcome {user} !\n\nYou are the member n°{user_number}\n\nThese members says welcome to you : {user_list}",
                     goodbye_message: "Goodbye {user} !\n\nWe are now {user_number} on the server !\n\nThese members says goodbye to you : {user_list}",
-                    boost_message: "Thanks to {user} for boosting the server!\n\nThese members says goodbye to you : {user_list}",
+                    boost_message: "Thanks to {user} for boosting the server, it's the {boost_number} boost on the server!\n\nThese members says goodbye to you : {user_list}",
                 }
             })
         }

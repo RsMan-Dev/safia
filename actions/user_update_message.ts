@@ -2,7 +2,7 @@ import { ButtonInteraction, GuildMember, MessageActionRow, MessageButton, Messag
 import Logger from "../utils/logger";
 import prisma_instance from "../utils/prisma_instance";
 
-export default class Welcome {
+export default class UserUpdateMessage {
   private constructor(){}
   static async sendWelcomeMessage(member: GuildMember) {
       let conf = await prisma_instance.configurations.findFirst({where: { guild: { id: member.guild.id } } });
@@ -92,5 +92,24 @@ static async sayGoodbye(interaction: ButtonInteraction) {
     interaction.reply({content: `You have already said goodbye.` , ephemeral: true});
 }
 
-  
-}
+    static async sendBoostMessaget(oldMember: GuildMember | PartialGuildMember, newMember: GuildMember | PartialGuildMember) {
+
+        const oldStatus = oldMember.premiumSince;
+        const newStatus = newMember.premiumSince;
+        let conf = await prisma_instance.configurations.findFirst({where: { guild: { id: oldMember.guild.id } } });
+        const guild = newMember.guild;
+      
+        if (!oldStatus && newStatus) {
+            if(conf?.boost_channel_id){
+            (newMember.guild.channels.cache.get(conf.boost_channel_id) as TextChannel)?.send({embeds: [
+                new MessageEmbed()
+                    .setTitle(conf!.boost_title)
+                    .setDescription(conf!.boost_message.replaceAll("{user}", newMember!.toString()).replaceAll("{boost_number}", `${newMember.guild!.premiumSubscriptionCount}`).replaceAll("{user_list}", `\n - ${newMember}`))
+                    .setImage((newMember as GuildMember).avatarURL() || "")
+                    .setColor(`#${conf!.boost_color}`)] });
+          
+        } 
+    }
+    }
+
+    }

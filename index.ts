@@ -8,6 +8,7 @@ import MemberManager from "./managers/member_manager";
 import SelectmenuManager from "./managers/select_menu_manager";
 import { PrismaClient } from "@prisma/client";
 import GuildManager from "./managers/guild_manager";
+import MemberUpdateManager from "./managers/member_updata_manager";
 
 dotenv.config();
 
@@ -36,6 +37,8 @@ client.on("guildMemberRemove", MemberManager.onDelete);
 
 client.on("guildCreate", GuildManager.onCreate);
 client.on("guildDelete", GuildManager.onDelete);
+
+client.on("guildMemberUpdate", MemberManager.onUpdate);
 
 client.login(Environment.get.bot_token);
 

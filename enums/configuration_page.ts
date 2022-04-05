@@ -20,6 +20,7 @@ export enum ConfigurationSelects{
     main_config_select = "main_config_select",
     welcome_message_id_config_select = "welcome_message_id_config_select",
     goodbye_message_id_config_select = "goodbye_message_id_config_select",
+    boost_message_id_config_select = "boost_message_id_config_select",
 }
 export enum ConfigurationButtons{
     welcome_message_title_config_button = "welcome_message_title_config_button",
@@ -28,6 +29,9 @@ export enum ConfigurationButtons{
     goodbye_message_title_config_button = "goodbye_message_title_config_button",
     goodbye_message_text_config_button = "goodbye_message_text_config_button",
     goodbye_message_color_config_button = "goodbye_message_color_config_button",
+    boost_message_title_config_button = "boost_message_title_config_button",
+    boost_message_text_config_button = "boost_message_text_config_button",
+    boost_message_color_config_button = "boost_message_color_config_button",
     return_to_main_menu_config_button = "return_to_main_menu_config_button",
 }
 
@@ -116,7 +120,7 @@ export default class ConfigurationPage{
             options.push(
                 new MessageActionRow().addComponents(
                     [
-                        new MessageSelectMenu().setCustomId(ConfigurationSelects.goodbye_message_id_config_select + "#"+(i/24)).setPlaceholder("Choose in what channel welcome will be sent...")
+                        new MessageSelectMenu().setCustomId(ConfigurationSelects.goodbye_message_id_config_select + "#"+(i/24)).setPlaceholder("Choose in what channel goodbye will be sent...")
                             .addOptions([
                                 {label: "None", description: "Use this to disable feature", value: "none"},
                                 ...channels.slice(i, i + 24)
@@ -144,6 +148,54 @@ export default class ConfigurationPage{
                         .setLabel("Configure description")
                         .setStyle("PRIMARY"),
                     new MessageButton().setCustomId(ConfigurationButtons.goodbye_message_color_config_button)
+                        .setLabel("Configure color")
+                        .setStyle("PRIMARY"),
+                    new MessageButton().setCustomId(ConfigurationButtons.return_to_main_menu_config_button)
+                        .setLabel("Return to main menu")
+                        .setStyle("DANGER")   
+
+
+                ])
+            ]
+        } as MessageOptions
+    }
+
+    static async boost_message(interaction: SelectMenuInteraction | ButtonInteraction): Promise<MessageOptions> {
+        let channels = interaction.guild?.channels.cache.filter(c=>c.isText()).map(c=>({label: c.name.substring(0,50), value: c.id}))!;
+        let conf = await prisma_instance.configurations.findFirst({where: { guild: { id: interaction.guild!.id } } });
+        let options = [];
+        for (let i = 0; i < channels.length; i += 24) {
+            options.push(
+                new MessageActionRow().addComponents(
+                    [
+                        new MessageSelectMenu().setCustomId(ConfigurationSelects.boost_message_id_config_select + "#"+(i/24)).setPlaceholder("Choose in what channel boost will be sent...")
+                            .addOptions([
+                                {label: "None", description: "Use this to disable feature", value: "none"},
+                                ...channels.slice(i, i + 24)
+                            ]),
+                    ]
+                ),
+            );
+        }
+        return {
+            content: "**boost configuration.**\nYou can configure boost message in this section\n__Warning! multiple channel selects can appear, use only one of these selects__\n\nEmbed preview:",
+            embeds:[
+                new MessageEmbed()
+                .setTitle(conf!.boost_title)
+                .setDescription(conf!.boost_message.replaceAll("{user}", interaction.member!.toString()).replaceAll("{boost_number}", `${interaction.guild!.premiumSubscriptionCount}`).replaceAll("{user_list}", `\n - ${interaction.member!}`))
+                .setImage((interaction.member! as GuildMember).avatarURL() || "")
+                .setColor(`#${conf!.boost_color}`)
+            ],
+            components: [
+                ...options,
+                new MessageActionRow().addComponents([
+                    new MessageButton().setCustomId(ConfigurationButtons.boost_message_title_config_button)
+                        .setLabel("Configure title")
+                        .setStyle("PRIMARY"),
+                    new MessageButton().setCustomId(ConfigurationButtons.boost_message_text_config_button)
+                        .setLabel("Configure description")
+                        .setStyle("PRIMARY"),
+                    new MessageButton().setCustomId(ConfigurationButtons.boost_message_color_config_button)
                         .setLabel("Configure color")
                         .setStyle("PRIMARY"),
                     new MessageButton().setCustomId(ConfigurationButtons.return_to_main_menu_config_button)

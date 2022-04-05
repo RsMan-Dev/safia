@@ -11,6 +11,7 @@ export default class SelectmenuManager{
             case ConfigurationSelects.main_config_select: Configuration.setPageFromMainMenu(interaction); return;
             case ConfigurationSelects.welcome_message_id_config_select: Configuration.setWelcomeMessagesChannelId(interaction); return;
             case ConfigurationSelects.goodbye_message_id_config_select: Configuration.setGoodbyeMessagesChannelId(interaction); return;
+            case ConfigurationSelects.boost_message_id_config_select: Configuration.setBoostMessagesChannelId(interaction); return;
             default: interaction.reply({content: "wip", ephemeral: true}); return;
         }
     }

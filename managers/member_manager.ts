@@ -1,5 +1,5 @@
 import { GuildMember, PartialGuildMember } from "discord.js";
-import Welcome from "../actions/welcome";
+import UserUpdateMessage from "../actions/user_update_message";
 import Logger from "../utils/logger";
 import prisma_instance from "../utils/prisma_instance";
 
@@ -17,11 +17,20 @@ export default class MemberManager{
              update: {}
         });
 
-        Welcome.sendWelcomeMessage(member);
+        UserUpdateMessage.sendWelcomeMessage(member);
     }
     static async onDelete(member: GuildMember | PartialGuildMember){
         await prisma_instance.guild_user.deleteMany({where: {user_id: member.id}});
 
-        Welcome.sendGoodbyeMessage(member);
+        UserUpdateMessage.sendGoodbyeMessage(member);
     }
+
+    static async onUpdate(oldMember : GuildMember | PartialGuildMember, newMember: GuildMember | PartialGuildMember){
+
+
+        UserUpdateMessage.sendBoostMessaget(oldMember, newMember);
+
+
+    }
+
 }
