@@ -1,4 +1,4 @@
-import { Client, Guild, GuildMember, Intents, Interaction } from "discord.js";
+import { Client, Intents, Interaction } from "discord.js";
 import Logger from "./utils/logger";
 import dotenv from "dotenv";
 import Environment from "./environment/environment";
@@ -8,7 +8,6 @@ import MemberManager from "./managers/member_manager";
 import SelectmenuManager from "./managers/select_menu_manager";
 import { PrismaClient } from "@prisma/client";
 import GuildManager from "./managers/guild_manager";
-import MemberUpdateManager from "./managers/member_updata_manager";
 
 dotenv.config();
 

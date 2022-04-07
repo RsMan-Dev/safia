@@ -1,12 +1,14 @@
-import { ButtonInteraction } from "discord.js";
+import { ButtonInteraction, GuildMember } from "discord.js";
 import Configuration from "../actions/configuration";
+import Moderation from "../actions/moderation";
 import Ping from "../actions/ping";
 import Welcome from "../actions/user_update_message";
 import ConfigurationPage, { ConfigurationButtons } from "../enums/configuration_page";
+import Permissions from "../enums/Permission";
 
 export default class ButtonManger{
     private constructor(){}
-    static dispatch(interaction: ButtonInteraction){
+    static async dispatch(interaction: ButtonInteraction){
         switch(interaction.customId){
             case "ping": Ping.trigger(interaction); return;
             case "sayWelcome": Welcome.sayWelcome(interaction); return;
@@ -24,7 +26,11 @@ export default class ButtonManger{
             case ConfigurationButtons.boost_message_title_config_button:
                 Configuration.setBoostMessageTextData(interaction); return;
             case ConfigurationButtons.return_to_main_menu_config_button: 
-                interaction.update( ConfigurationPage.main); return;
+                if (!await Moderation.checkPermission(interaction.member as GuildMember, Permissions.config)) {
+                    interaction.reply({content: "You dont have required permission", ephemeral: true});
+                    return;
+                }
+                interaction.update( ConfigurationPage.main ); return;
 
 
             default: interaction.reply({content: "wip", ephemeral: true}); return;

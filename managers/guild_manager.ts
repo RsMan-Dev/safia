@@ -6,7 +6,6 @@ export default class GuildManager{
    private constructor(){} 
 
     static async onCreate(guild: Guild){
-        Logger.dump("guild create")
         let conf = await prisma_instance.configurations.findFirst({where: { guild: { id: guild.id } } });
         let db_guild = await prisma_instance.guilds.findFirst({where: {  id: guild.id } });
         if(!conf){
@@ -27,7 +26,6 @@ export default class GuildManager{
                 }
             })
         }
-        Logger.dump(conf, db_guild);
     }
 
     static async onDelete(guild: Guild){
