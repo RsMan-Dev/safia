@@ -1,9 +1,11 @@
 import { ButtonInteraction, CommandInteraction, GuildMember, Message, SelectMenuInteraction } from "discord.js";
 import ConfigurationPage, { ConfigurationButtons, ConfigurationSelectMenuMain } from "../enums/configuration_page";
 import Permissions from "../enums/Permission";
+import { GuildConfigBaseData } from "../managers/guild_manager";
 import Logger from "../utils/logger";
 import prisma_instance from "../utils/prisma_instance";
 import Moderation from "./moderation";
+import { UserUpdateMessageType } from "./user_update_message";
 
 export default class Configuration{
     private constructor(){}
@@ -14,6 +16,7 @@ export default class Configuration{
         }
         interaction.reply(ConfigurationPage.main);
     }
+
     static async setPageFromMainMenu(interaction: SelectMenuInteraction){
         if (!await Moderation.checkPermission(interaction.member as GuildMember, Permissions.config)) {
             interaction.reply({content: "You dont have required permission", ephemeral: true});
@@ -25,14 +28,15 @@ export default class Configuration{
                     (interaction.message as Message).delete();
                     interaction.reply({content: "Configuration ended", ephemeral: true});
                     continue;
-                case ConfigurationSelectMenuMain.welcome_message: interaction.update(await ConfigurationPage.welcome_message(interaction)); continue;
-                case ConfigurationSelectMenuMain.goodbye_message: interaction.update(await ConfigurationPage.goodbye_message(interaction)); continue;
-                case ConfigurationSelectMenuMain.boost_message: interaction.update(await ConfigurationPage.boost_message(interaction)); continue;
+                case ConfigurationSelectMenuMain.welcome_message: interaction.update(await ConfigurationPage.user_update_message(interaction, UserUpdateMessageType.welcome) || {}); continue;
+                case ConfigurationSelectMenuMain.goodbye_message: interaction.update(await ConfigurationPage.user_update_message(interaction, UserUpdateMessageType.goodbye) || {}); continue;
+                case ConfigurationSelectMenuMain.boost_message: interaction.update(await ConfigurationPage.user_update_message(interaction, UserUpdateMessageType.boost) || {}); continue;
                 default: interaction.reply({content: "wip", ephemeral: true}); continue;
             } 
         }
     }
-    static async setWelcomeMessagesChannelId(interaction: SelectMenuInteraction){
+    
+    static async setUserUpdateMessagesChannelId(interaction: SelectMenuInteraction, type: UserUpdateMessageType){
         if (!await Moderation.checkPermission(interaction.member as GuildMember, Permissions.config)) {
             interaction.reply({content: "You dont have required permission", ephemeral: true});
             return;
@@ -40,14 +44,15 @@ export default class Configuration{
         let value;
         for(let v of interaction.values){value = v; break;}
         if(value == "none"){
-            await prisma_instance.configurations.updateMany({ where:{ guild: { id: interaction.guild!.id } }, data: { welcome_channel_id: null } })
+            await prisma_instance.configurations.updateMany({ where:{ guild: { id: interaction.guild!.id } }, data: { [`${type}_channel_id`]: null } })
         } else {
-            await prisma_instance.configurations.updateMany({ where:{ guild: { id: interaction.guild!.id } }, data: { welcome_channel_id: value } })
+            await prisma_instance.configurations.updateMany({ where:{ guild: { id: interaction.guild!.id } }, data: { [`${type}_channel_id`]: value } })
         }
-        (interaction.message as Message).edit(await ConfigurationPage.welcome_message(interaction));
+        (interaction.message as Message).edit(await ConfigurationPage.user_update_message(interaction, type) || {});
         interaction.reply({content: "Channel set", ephemeral: true});
     }
-    static async setWelcomeMessageTextData(interaction: ButtonInteraction){
+    
+    static async setUserUpdateMessagesTextData(interaction: ButtonInteraction, type: UserUpdateMessageType){
         if (!await Moderation.checkPermission(interaction.member as GuildMember, Permissions.config)) {
             interaction.reply({content: "You dont have required permission", ephemeral: true});
             return;
@@ -57,18 +62,18 @@ export default class Configuration{
         let collector = (interaction.message as Message).channel.createMessageCollector({filter: filter, ...options});
         collector.on("collect", async (message)=>{
             switch(interaction.customId){
-                case ConfigurationButtons.welcome_message_color_config_button:
+                case ConfigurationButtons[`${type}_message_color_config_button`]:
                     if(/^[0-9a-fA-F]{6}/i.test(message.content)) {
-                        await prisma_instance.configurations.updateMany({ where:{ guild: { id: interaction.guild!.id } }, data: { welcome_color: message.content } });
+                        await prisma_instance.configurations.updateMany({ where:{ guild: { id: interaction.guild!.id } }, data: { [`${type}_color`]: message.content } });
                     } break;
-                case ConfigurationButtons.welcome_message_text_config_button:
-                    await prisma_instance.configurations.updateMany({ where:{ guild: { id: interaction.guild!.id } }, data: { welcome_message: message.content } }); break;
-                case ConfigurationButtons.welcome_message_title_config_button:
+                case ConfigurationButtons[`${type}_message_text_config_button`]:
+                    await prisma_instance.configurations.updateMany({ where:{ guild: { id: interaction.guild!.id } }, data: { [`${type}_message`]: message.content } }); break;
+                case ConfigurationButtons[`${type}_message_title_config_button`]:
                     if(message.content.length <= 192) {
-                        await prisma_instance.configurations.updateMany({ where:{ guild: { id: interaction.guild!.id } }, data: { welcome_title: message.content } });
+                        await prisma_instance.configurations.updateMany({ where:{ guild: { id: interaction.guild!.id } }, data: { [`${type}_title`]: message.content } });
                     } break;
             }
-            (interaction.message as Message).edit(await ConfigurationPage.welcome_message(interaction));
+            (interaction.message as Message).edit(await ConfigurationPage.user_update_message(interaction, type) || {});
             message.delete();
 
         });
@@ -77,119 +82,10 @@ export default class Configuration{
             case ConfigurationButtons.welcome_message_color_config_button:
                 example = "Only 6 characters allowed, HEX colors, Characters must be between A-F, or 0-9.\nExamples: red = FF0000, blue = 0000FF, green = 00FF00."; break;
             case ConfigurationButtons.welcome_message_text_config_button:
-                example = "Placeholders allowed: {user}, {user_number}, {user_list}\nExample data: \nWelcome {user} !\n\nYou are the member n°{user_number}\n\nThese members says welcome to you :{user_list}"; break;
+                example = "Placeholders allowed: {user}, {user_number}, {user_list}\nExample data: \n" + GuildConfigBaseData[`${type}_message`]; break;
             case ConfigurationButtons.welcome_message_title_config_button:
-                example = "Example data: A new Member !"; break;
+                example = "Example data: " + GuildConfigBaseData[`${type}_title`]; break;
         }
         interaction.reply({content: "Now give me content in this channel simply by sending message.\nYou have 20minutes.\n\n"+example, ephemeral: true});
     }
-
-
-    static async setGoodbyeMessagesChannelId(interaction: SelectMenuInteraction){
-        if (!await Moderation.checkPermission(interaction.member as GuildMember, Permissions.config)) {
-            interaction.reply({content: "You dont have required permission", ephemeral: true});
-            return;
-        }
-        let value;
-        for(let v of interaction.values){value = v; break;}
-        if(value == "none"){
-            await prisma_instance.configurations.updateMany({ where:{ guild: { id: interaction.guild!.id } }, data: { goodbye_channel_id: null } })
-        } else {
-            await prisma_instance.configurations.updateMany({ where:{ guild: { id: interaction.guild!.id } }, data: { goodbye_channel_id: value } })
-        }
-        (interaction.message as Message).edit(await ConfigurationPage.goodbye_message(interaction));
-        interaction.reply({content: "Channel set", ephemeral: true});
-    }
-    static async setGoodbyeMessageTextData(interaction: ButtonInteraction){
-        if (!await Moderation.checkPermission(interaction.member as GuildMember, Permissions.config)) {
-            interaction.reply({content: "You dont have required permission", ephemeral: true});
-            return;
-        }
-        let filter = (message : Message) => { return (message.member as GuildMember).id == (interaction.member as GuildMember).id; }
-        let options = { max: 1, time: 72000000 }
-        let collector = (interaction.message as Message).channel.createMessageCollector({filter: filter, ...options});
-        collector.on("collect", async (message)=>{
-            switch(interaction.customId){
-                case ConfigurationButtons.goodbye_message_color_config_button:
-                    if(/^[0-9a-fA-F]{6}/i.test(message.content)) {
-                        await prisma_instance.configurations.updateMany({ where:{ guild: { id: interaction.guild!.id } }, data: { goodbye_color: message.content } });
-                    } break;
-                case ConfigurationButtons.goodbye_message_text_config_button:
-                    await prisma_instance.configurations.updateMany({ where:{ guild: { id: interaction.guild!.id } }, data: { goodbye_message: message.content } }); break;
-                case ConfigurationButtons.goodbye_message_title_config_button:
-                    if(message.content.length <= 192) {
-                        await prisma_instance.configurations.updateMany({ where:{ guild: { id: interaction.guild!.id } }, data: { goodbye_title: message.content } });
-                    } break;
-            }
-            (interaction.message as Message).edit(await ConfigurationPage.goodbye_message(interaction));
-            message.delete();
-
-        });
-        let example = "";
-        switch(interaction.customId){
-            case ConfigurationButtons.goodbye_message_color_config_button:
-                example = "Only 6 characters allowed, HEX colors, Characters must be between A-F, or 0-9.\nExamples: red = FF0000, blue = 0000FF, green = 00FF00."; break;
-            case ConfigurationButtons.goodbye_message_text_config_button:
-                example = "Placeholders allowed: {user}, {user_number}, {user_list}\nExample data: \ngoodbye {user} !\n\nWe are now n°{user_number}\n\nThese members says goodbye to you :{user_list}"; break;
-            case ConfigurationButtons.goodbye_message_title_config_button:
-                example = "Example data: A Member left !"; break;
-        }
-        interaction.reply({content: "Now give me content in this channel simply by sending message.\nYou have 20minutes.\n\n"+example, ephemeral: true});
-    }
-
-    static async setBoostMessagesChannelId(interaction: SelectMenuInteraction){
-        if (!await Moderation.checkPermission(interaction.member as GuildMember, Permissions.config)) {
-            interaction.reply({content: "You dont have required permission", ephemeral: true});
-            return;
-        }
-        let value;
-        for(let v of interaction.values){value = v; break;}
-        if(value == "none"){
-            await prisma_instance.configurations.updateMany({ where:{ guild: { id: interaction.guild!.id } }, data: { goodbye_channel_id: null } })
-        } else {
-            await prisma_instance.configurations.updateMany({ where:{ guild: { id: interaction.guild!.id } }, data: { goodbye_channel_id: value } })
-        }
-        (interaction.message as Message).edit(await ConfigurationPage.goodbye_message(interaction));
-        interaction.reply({content: "Channel set", ephemeral: true});
-    }
-    static async setBoostMessageTextData(interaction: ButtonInteraction){
-        if (!await Moderation.checkPermission(interaction.member as GuildMember, Permissions.config)) {
-            interaction.reply({content: "You dont have required permission", ephemeral: true});
-            return;
-        }
-        let filter = (message : Message) => { return (message.member as GuildMember).id == (interaction.member as GuildMember).id; }
-        let options = { max: 1, time: 72000000 }
-        let collector = (interaction.message as Message).channel.createMessageCollector({filter: filter, ...options});
-        collector.on("collect", async (message)=>{
-            switch(interaction.customId){
-                case ConfigurationButtons.boost_message_color_config_button:
-                    if(/^[0-9a-fA-F]{6}/i.test(message.content)) {
-                        await prisma_instance.configurations.updateMany({ where:{ guild: { id: interaction.guild!.id } }, data: { boost_color: message.content } });
-                    } break;
-                case ConfigurationButtons.boost_message_text_config_button:
-                    await prisma_instance.configurations.updateMany({ where:{ guild: { id: interaction.guild!.id } }, data: { boost_message: message.content } }); break;
-                case ConfigurationButtons.boost_message_title_config_button:
-                    if(message.content.length <= 192) {
-                        await prisma_instance.configurations.updateMany({ where:{ guild: { id: interaction.guild!.id } }, data: { boost_title: message.content } });
-                    } break;
-            }
-            (interaction.message as Message).edit(await ConfigurationPage.boost_message(interaction));
-            message.delete();
-
-        });
-        let example = "";
-        switch(interaction.customId){
-            case ConfigurationButtons.boost_message_color_config_button:
-                example = "Only 6 characters allowed, HEX colors, Characters must be between A-F, or 0-9.\nExamples: red = FF0000, blue = 0000FF, green = 00FF00."; break;
-            case ConfigurationButtons.boost_message_text_config_button:
-                example = "Placeholders allowed: {user}, {boost_number}, {user_list}\nExample data: \nThx for boosting {user} !\n\nServer are now tier {boost_tier}\n\nThese members says thanks you to you :{user_list}"; break;
-            case ConfigurationButtons.boost_message_title_config_button:
-                example = "Example data: A Member boost the server !"; break;
-        }
-        interaction.reply({content: "Now give me content in this channel simply by sending message.\nYou have 20minutes.\n\n"+example, ephemeral: true});
-    }
-
-
-    
-
 }

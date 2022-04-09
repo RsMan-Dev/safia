@@ -1,115 +1,78 @@
-import { ButtonInteraction, GuildMember, MessageActionRow, MessageButton, MessageEmbed, TextChannel, Message, PartialGuildMember } from "discord.js";
+import { configurations } from "@prisma/client";
+import { ButtonInteraction, GuildMember, MessageActionRow, MessageButton, MessageEmbed, TextChannel, Message, PartialGuildMember, MessagePayload, MessageOptions, MessageMentions, User, Guild } from "discord.js";
 import Logger from "../utils/logger";
 import prisma_instance from "../utils/prisma_instance";
 
+export enum UserUpdateMessageType{
+    welcome = "welcome",
+    goodbye = "goodbye",
+    boost = "boost"
+}
+export enum UserUpdateMessageButtons{
+    welcome = "say_welcome",
+    goodbye = "say_goodbye",
+}
+const USER_LIST_MATCH = / - (<@!?(\d{17,19})>)\n/g;
+const USER_MATCH = MessageMentions.USERS_PATTERN;
 export default class UserUpdateMessage {
-  private constructor(){}
-  static async sendWelcomeMessage(member: GuildMember) {
-      let conf = await prisma_instance.configurations.findFirst({where: { guild: { id: member.guild.id } } });
-      
-      if(conf?.welcome_channel_id){
-        (member.guild.channels.cache.get(conf.welcome_channel_id) as TextChannel)
-            ?.send({
+    private constructor(){}
+
+    static async getUpdateMessageObject(guild: Guild, member: GuildMember | User, member_list: (string | GuildMember)[], type: UserUpdateMessageType, withConf?: configurations) : Promise<[string | undefined, MessagePayload | MessageOptions | undefined]> {
+        let conf = withConf || await prisma_instance.configurations.findFirst({where: { guild: { id: guild.id } } });
+        if(conf == null) return [undefined, undefined];
+        return [
+            conf[`${type}_channel_id`] || undefined,
+            {
                 embeds:[
                     new MessageEmbed()
-                        .setTitle(conf.welcome_title)
-                        .setDescription(conf.welcome_message.replaceAll("{user}", member.toString()).replaceAll("{user_number}", member.guild.memberCount.toString()).replaceAll("{user_list}", ""))
-                        .setImage(member.avatarURL() || "")
-                        .setColor(`#${conf.welcome_color}`)
+                        .setTitle(conf[`${type}_title`]!)
+                        .setDescription(conf[`${type}_message`]!.replaceAll("{user}", member.toString()).replaceAll("{user_number}", guild.memberCount.toString()).replaceAll("{boost_number}", (guild.premiumSubscriptionCount || 0).toString()).replaceAll("{user_list}", "\n" + member_list.map(m=>' - ' + m.toString() + '\n').join("")))
+                        .setThumbnail(member.displayAvatarURL() || "")
+                        .setColor(`#${conf[`${type}_color`]!}`)
                 ],
                 components:[
                     new MessageActionRow({
-                        components: [
-                            new MessageButton()
-                                .setLabel("Say welcome")
-                                .setCustomId("sayWelcome")
-                                .setStyle("PRIMARY")
-                        ]
+                        components: type != UserUpdateMessageType.boost ?
+                            [
+                                new MessageButton()
+                                    .setLabel(`Say ${type}`)
+                                    .setCustomId(UserUpdateMessageButtons[type])
+                                    .setStyle("PRIMARY")
+                            ]
+                            : []
                     })
                 ]
-            });
-      }
-  }
+            }
+        ];
+    }
 
-    static async sayWelcome(interaction: ButtonInteraction) {
+    static async sendUpdateMessage(member: GuildMember, type: UserUpdateMessageType) {
+        let [channel_id, message] = await this.getUpdateMessageObject(member.guild, member, [], type);
+        if(!message || !channel_id) return;
+        (member.guild.channels.cache.get(channel_id) as TextChannel)
+            ?.send(message);
+    }
+
+    static async updateMessageButtonInteract(interaction: ButtonInteraction, type: UserUpdateMessageType) {
         if(!interaction.guild || !interaction.member) return;
         let message = interaction.message as Message;
-        if(!message.embeds[0].description?.includes(interaction.member.toString() || "#")){
-            message.embeds[0].setDescription(message.embeds[0].description + `\n - ${interaction.member.toString()}`);
-            interaction.update({
-                embeds: [
-                    message.embeds[0]
-                ]
-            });
-            return;
+        let embed = message.embeds[0];
+        let embedDescription = embed?.description;
+        if(!embedDescription) return;
+        let member_list = [...embedDescription.matchAll(USER_LIST_MATCH) || []].map(m=>m[1]);
+        let member = [...embedDescription.matchAll(USER_MATCH) || []].find(m=>!member_list.includes(m[0])) || "";
+        if(member == "") return;
+        let memberObject = await interaction.client.users.fetch(member[1]);
+        if(member_list.find(m=>m == (interaction.member as GuildMember).toString())){
+            interaction.reply({content: `You have already said ${type}` , ephemeral: true});
+        } else if (member[0] == interaction.member.toString()){
+            interaction.reply({content: `Sorry, you cannot say ${type} to yourself` , ephemeral: true});
+        } else if (member_list.length > 10){
+            interaction.reply({content: `Sorry, we are too much who says ${type}` , ephemeral: true});
+        } else {
+            member_list.push((interaction.member as GuildMember).toString());
+            let [_, messageUpdate] = await this.getUpdateMessageObject(interaction.guild, memberObject, member_list, type);
+            if(messageUpdate) interaction.update(messageUpdate);
         }
-        interaction.reply({content: `You have already said welcome` , ephemeral: true});
     }
-
-
-
-
-
-  static async sendGoodbyeMessage(member: GuildMember | PartialGuildMember) {
-    let conf = await prisma_instance.configurations.findFirst({where: { guild: { id: member.guild.id } } });
-    if(conf?.goodbye_channel_id){
-        (member.guild.channels.cache.get(conf.goodbye_channel_id) as TextChannel)
-            ?.send({
-                embeds:[
-                    new MessageEmbed()
-                        .setTitle(conf.goodbye_title)
-                        .setDescription(conf.goodbye_message.replaceAll("{user}", member.toString()).replaceAll("{user_number}", member.guild.memberCount.toString()).replaceAll("{user_list}", ""))
-                        .setImage(member.avatarURL() || "")
-                        .setColor(`#${conf.goodbye_color}`)
-                ],
-                components:[
-                    new MessageActionRow({
-                        components: [
-                            new MessageButton()
-                                .setLabel("Say goodbye")
-                                .setCustomId("sayGoodbye")
-                                .setStyle("PRIMARY")
-                        ]
-                    })
-                ]
-            });
-    }
-    
 }
-
-static async sayGoodbye(interaction: ButtonInteraction) {
-    if(!interaction.guild || !interaction.member) return;
-    let message = interaction.message as Message;
-    if(!message.embeds[0].description?.includes(interaction.member.toString() || "#")){
-        message.embeds[0].setDescription(message.embeds[0].description + `\n - ${interaction.member.toString()}`);
-        interaction.update({
-            embeds: [
-                message.embeds[0]
-            ]
-        });
-        return;
-    }
-    interaction.reply({content: `You have already said goodbye.` , ephemeral: true});
-}
-
-    static async sendBoostMessaget(oldMember: GuildMember | PartialGuildMember, newMember: GuildMember | PartialGuildMember) {
-
-        const oldStatus = oldMember.premiumSince;
-        const newStatus = newMember.premiumSince;
-        let conf = await prisma_instance.configurations.findFirst({where: { guild: { id: oldMember.guild.id } } });
-        const guild = newMember.guild;
-      
-        if (!oldStatus && newStatus) {
-            if(conf?.boost_channel_id){
-            (newMember.guild.channels.cache.get(conf.boost_channel_id) as TextChannel)?.send({embeds: [
-                new MessageEmbed()
-                    .setTitle(conf!.boost_title)
-                    .setDescription(conf!.boost_message.replaceAll("{user}", newMember!.toString()).replaceAll("{boost_number}", `${newMember.guild!.premiumSubscriptionCount}`).replaceAll("{user_list}", `\n - ${newMember}`))
-                    .setImage((newMember as GuildMember).avatarURL() || "")
-                    .setColor(`#${conf!.boost_color}`)] });
-          
-        } 
-    }
-    }
-
-    }

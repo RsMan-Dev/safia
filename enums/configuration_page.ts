@@ -1,4 +1,5 @@
 import { ButtonInteraction, GuildMember, MessageActionRow, MessageButton, MessageEmbed, MessageOptions, MessagePayload, MessageSelectMenu, SelectMenuInteraction } from "discord.js";
+import UserUpdateMessage, { UserUpdateMessageType } from "../actions/user_update_message";
 import prisma_instance from "../utils/prisma_instance";
 
 export enum ConfigurationSelectMenuMain{
@@ -64,6 +65,58 @@ export default class ConfigurationPage{
             ]
         } as MessageOptions
     }
+
+    static async user_update_message(interaction: SelectMenuInteraction | ButtonInteraction, type: UserUpdateMessageType): Promise<MessageOptions | undefined>{
+        if(!interaction.guild || !interaction.member) return undefined;
+        let channels = interaction.guild.channels.cache.filter(c=>c.isText()).map(c=>({label: c.name.substring(0,50), value: c.id}));
+        let conf = await prisma_instance.configurations.findFirst({where: { guild: { id: interaction.guild.id } } });
+        if(!channels || !conf) return undefined;
+        let options = [];
+        for (let i = 0; i < channels.length; i += 24) {
+            options.push(
+                new MessageActionRow().addComponents(
+                    [
+                        new MessageSelectMenu().setCustomId(ConfigurationSelects[`${type}_message_id_config_select`] + "#"+(i/24)).setPlaceholder("Choose in what channel welcome will be sent...")
+                            .addOptions([
+                                {label: "None", description: "Use this to disable feature", value: "none"},
+                                ...channels.slice(i, i + 24)
+                            ]),
+                    ]
+                ),
+            );
+        }
+        return {
+            content: `**${type.charAt(0).toUpperCase() + type.slice(1)} configuration.**\nYou can configure ${type} message in this section\n__Warning! multiple channel selects can appear, use only one of these selects__\n\nEmbed preview:`,
+            embeds:(
+                (await UserUpdateMessage.getUpdateMessageObject(
+                    interaction.guild,
+                    interaction.member as GuildMember,
+                    [interaction.member] as GuildMember[],
+                    type,
+                    conf
+                ))[1] as MessageOptions
+            ).embeds,
+            components: [
+                ...options,
+                new MessageActionRow().addComponents([
+                    new MessageButton().setCustomId(ConfigurationButtons[`${type}_message_title_config_button`])
+                        .setLabel("Configure title")
+                        .setStyle("PRIMARY"),
+                    new MessageButton().setCustomId(ConfigurationButtons[`${type}_message_text_config_button`])
+                        .setLabel("Configure description")
+                        .setStyle("PRIMARY"),
+                    new MessageButton().setCustomId(ConfigurationButtons[`${type}_message_color_config_button`])
+                        .setLabel("Configure color")
+                        .setStyle("PRIMARY"),
+                    new MessageButton().setCustomId(ConfigurationButtons.return_to_main_menu_config_button)
+                        .setLabel("Return to main menu")
+                        .setStyle("DANGER")   
+
+                ])
+            ]
+        } as MessageOptions
+    }
+/*
     static async welcome_message(interaction: SelectMenuInteraction | ButtonInteraction): Promise<MessageOptions> {
         let channels = interaction.guild?.channels.cache.filter(c=>c.isText()).map(c=>({label: c.name.substring(0,50), value: c.id}))!;
         let conf = await prisma_instance.configurations.findFirst({where: { guild: { id: interaction.guild!.id } } });
@@ -207,4 +260,5 @@ export default class ConfigurationPage{
             ]
         } as MessageOptions
     }
+    */
 }

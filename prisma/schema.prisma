@@ -106,7 +106,7 @@ model configurations {
   goodbye_message                  String               @db.Text
   goodbye_color                    String               @default("FF0000") @db.VarChar(6)
   goodbye_channel_id               String?              @db.VarChar(32)
-  boost_title                      String               @default("A member boost the server !") @db.VarChar(192)
+  boost_title                      String               @default("A member boosted the server !") @db.VarChar(192)
   boost_message                    String               @db.Text
   boost_color                      String               @default("A13DFF") @db.VarChar(6)
   boost_channel_id                 String?              @db.VarChar(32)

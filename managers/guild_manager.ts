@@ -2,6 +2,18 @@ import { Guild } from "discord.js";
 import Logger from "../utils/logger";
 import prisma_instance from "../utils/prisma_instance";
 
+export enum GuildConfigBaseData{
+    welcome_title = "A new member !",
+    welcome_message = "Welcome {user} !\n\nYou are the member n°{user_number}\n\nThese members says welcome to you : {user_list}",
+    welcome_color = "#00FF00",
+    goodbye_title = "A member left !",
+    goodbye_message = "Goodbye {user} !\n\nWe are now {user_number} on the server !\n\nThese members says goodbye to you : {user_list}",
+    goodbye_color = "#FF0000",
+    boost_title = "A member boosted the server !",
+    boost_message = "Thanks to {user} for boosting the server, it's the {boost_number} boost on the server!",
+    boost_color = "#FF00FF",
+}
+
 export default class GuildManager{
    private constructor(){} 
 
@@ -11,9 +23,9 @@ export default class GuildManager{
         if(!conf){
             conf = await prisma_instance.configurations.create({
                 data: {
-                    welcome_message: "Welcome {user} !\n\nYou are the member n°{user_number}\n\nThese members says welcome to you : {user_list}",
-                    goodbye_message: "Goodbye {user} !\n\nWe are now {user_number} on the server !\n\nThese members says goodbye to you : {user_list}",
-                    boost_message: "Thanks to {user} for boosting the server, it's the {boost_number} boost on the server!\n\nThese members says goodbye to you : {user_list}",
+                    welcome_message: GuildConfigBaseData.welcome_message,
+                    goodbye_message: GuildConfigBaseData.goodbye_message,
+                    boost_message: GuildConfigBaseData.boost_message,
                 }
             })
         }

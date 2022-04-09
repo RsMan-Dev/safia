@@ -1,7 +1,9 @@
-import { ButtonInteraction, CommandInteraction, CommandInteractionOption, GuildMember, MessageActionRow, MessageButton, MessageEmbed, Permissions as dPerm } from "discord.js";
+import { ButtonInteraction, CommandInteraction, CommandInteractionOption, GuildMember, MessageActionRow, MessageButton, MessageEmbed, Permissions as dPerm, TextChannel } from "discord.js";
 import Permissions from "../enums/Permission";
 import Logger from "../utils/logger";
 import Moderation from "./moderation";
+import prisma_instance from "../utils/prisma_instance";
+
 
 export default class Sanction {
     private constructor() { }
@@ -37,9 +39,15 @@ export default class Sanction {
         }).catch(Logger.dump);
         await guildMember.ban({ reason: reasons || undefined });
 
+        let conf = await prisma_instance.configurations.findFirst({where: { guild: { id: interaction.guild!.id } } });
+        if(conf == null) return [undefined, undefined];
+        if(conf?.log_channel_id){
+            (interaction.guild!.channels.cache.get(conf.log_channel_id) as TextChannel)
+                ?.send(`New log ! ${interaction.member} has banned ${guildMember.user.username} for the reason : ${reasons} !`)
+}
     }
     static async kick(interaction: CommandInteraction) {
-
+        let conf = await prisma_instance.configurations.findFirst({where: { guild: { id: interaction.guild!.id } } });
         const member = interaction.options.getMember("user");
         const reasons = interaction.options.getString("reason");
         const guildMember = member as GuildMember;
@@ -71,6 +79,13 @@ export default class Sanction {
         }).catch(Logger.dump);
 
         await guildMember.kick();
+
+        
+        if(conf == null) return [undefined, undefined];
+        if(conf?.log_channel_id){
+            (interaction.guild!.channels.cache.get(conf.log_channel_id) as TextChannel)
+                ?.send(`New log ! ${interaction.member} has kicked ${guildMember.user.username} for the reason : ${reasons} !`)
+}
     }
 
     static async softban(interaction: CommandInteraction) {
@@ -105,6 +120,13 @@ export default class Sanction {
 
         await guildMember.ban({ reason: reasons || undefined , days: 7 });
         await guildMember.guild.members.unban(guildMember.id);
+
+        let conf = await prisma_instance.configurations.findFirst({where: { guild: { id: interaction.guild!.id } } });
+        if(conf == null) return [undefined, undefined];
+        if(conf?.log_channel_id){
+            (interaction.guild!.channels.cache.get(conf.log_channel_id) as TextChannel)
+                ?.send(`New log ! ${interaction.member} has SoftBanned ${guildMember.user.username} for the reason : ${reasons} !`)
+}
     }
 
 
@@ -157,5 +179,22 @@ export default class Sanction {
         })
 
         interaction.reply({content: `${member.user.tag} has been muted for ${millis/1000}s\nReason: ${reason}`, ephemeral: true});
+
+        let conf = await prisma_instance.configurations.findFirst({where: { guild: { id: interaction.guild!.id } } });
+        if(conf == null) return [undefined, undefined];
+        if(conf?.log_channel_id){
+            (interaction.guild!.channels.cache.get(conf.log_channel_id) as TextChannel)
+                ?.send(`New log ! ${interaction.member} has mutted ${member.user.tag} for the reason : ${reason} for ${millis/1000}s !`)
+}
+
+        
     }
+
+
+
+
+
+
+
+
 }
